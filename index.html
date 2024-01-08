@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+    <title>SkSL Playground</title>
+  </head>
+  <body>
+    <canvas id="canvas" width="512" height="512"></canvas>
+    <script src="https://unpkg.com/canvaskit-wasm@latest/bin/canvaskit.js"></script>
+    <script>
+      const canvasElement = document.getElementById("canvas");
+      const startTime = Date.now();
+      CanvasKitInit({
+        locateFile: (file) => "https://unpkg.com/canvaskit-wasm@latest/bin/" + file,
+      }).then((CanvasKit) => {
+        fetch("shader.sksl").then((response) => {
+          response.text().then((shader) => {
+            const surface = CanvasKit.MakeCanvasSurface(canvasElement);
+            const paint = new CanvasKit.Paint();
+            const factory = CanvasKit.RuntimeEffect.Make(shader);
+            function drawFrame(canvas) {
+              canvas.clear(CanvasKit.TRANSPARENT);
+              const shader = factory.makeShader([
+                canvasElement.clientWidth,        // iResolution.x
+                canvasElement.clientHeight,       // iResolution.y
+                (Date.now() - startTime) / 1000,  // iTime
+              ]);
+              paint.setShader(shader);
+              canvas.drawRect(CanvasKit.LTRBRect(0, 0, canvasElement.clientWidth, canvasElement.clientHeight), paint);
+              shader.delete();
+              surface.requestAnimationFrame(drawFrame);
+            }
+            surface.requestAnimationFrame(drawFrame);
+          });
+        });
+      });
+    </script>
+  </body>
+</html>
